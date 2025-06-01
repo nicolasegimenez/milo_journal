@@ -1,0 +1,37 @@
+{
+  "canisters": {
+    "internet_identity": {
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "frontend": {},
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    },
+    "milo_journal_backend": {
+      "main": "src/milo_journal_backend/main.mo",
+      "type": "motoko"
+    },
+    "milo_journal_frontend": {
+      "dependencies": [
+        "milo_journal_backend"
+      ],
+      "source": [
+        "src/milo_journal_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "milo_journal_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
