@@ -87,7 +87,7 @@ npm run dev
 ## 💰 Economía de Tokens ($INV)
 
 ### Flujo de Tokens
-
+```mermaid
 graph TD
     A[Usuario se registra] --> B[Recibe 1000 $INV iniciales]
     B --> C[Publica paper<br/>Costo: -100 $INV]
@@ -102,7 +102,7 @@ graph TD
     style H fill:#c8e6c9
     style I fill:#fff3e0
     style G fill:#f3e5f5
-
+```
 ### Costos y Recompensas
 
 - **Registro inicial**: 1000 $INV gratis
