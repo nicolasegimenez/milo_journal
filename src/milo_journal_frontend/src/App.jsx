@@ -1,63 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Users, TrendingUp, Plus, ThumbsUp, ThumbsDown, Wallet, User } from 'lucide-react';
 // Simulación de conexión con Internet Computer
-const useIC = () => {
-  const [actor, setActor] = useState(null);
-  const [identity, setIdentity] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const connect = async () => {
-    // Simulación de conexión
-    setIsAuthenticated(true);
-    setIdentity({ getPrincipal: () => 'rrkah-fqaaa-aaaah-qcaaq-cai' });
-    setActor({
-      registerUser: async (username) => ({ ok: 'Usuario registrado' }),
-      getUserInfo: async () => ({ 
-        ok: { 
-          username: 'Usuario Demo', 
-          walletAmount: 1770, 
-          publishedPapers: [1, 2], 
-          reviewedPapers: [3, 4] 
-        } 
-      }),
-      submitPaper: async (title, content) => ({ ok: Math.floor(Math.random() * 1000) }),
-      votePaper: async (paperId, approve) => ({ ok: 'Voto registrado' }),
-      getAllPapers: async () => [
-        {
-          id: 1,
-          title: 'A Peer to Peer Electronic Cash System',
-          author: 'Satoshi Nakamoto',
-          content: 'Abstract: A purely peer-to-peer version of electronic cash...',
-          status: { Approved: null },
-          votes: 5,
-          timestamp: Date.now() * 1000000
-        },
-        {
-          id: 2,
-          title: 'Hacia una Plataforma de Publicación Descentralizada',
-          author: 'Nicolas E. Gimenez',
-          content: 'Propuesta para crear una plataforma descentralizada...',
-          status: { InProcess: null },
-          votes: 1,
-          timestamp: Date.now() * 1000000
-        },
-        {
-          id: 3,
-          title: 'The large-N limit of superconformal field theories',
-          author: 'Juan Maldacena',
-          content: 'We consider field theories in various dimensions...',
-          status: { Proposal: null },
-          votes: 0,
-          timestamp: Date.now() * 1000000
-        }
-      ],
-      getSystemStats: async () => ({ totalPapers: 15, totalUsers: 8, approvedPapers: 6 })
-    });
-  };
-
-  return { actor, identity, isAuthenticated, connect };
-};
-
+import useIC from './hooks/useIC';
 const AcademicJournalApp = () => {
   const { actor, isAuthenticated, connect } = useIC();
   const [activeTab, setActiveTab] = useState('papers');
@@ -65,7 +9,8 @@ const AcademicJournalApp = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [stats, setStats] = useState(null);
   const [newPaper, setNewPaper] = useState({ title: '', content: '' });
-  const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     if (actor) {
@@ -95,6 +40,25 @@ const AcademicJournalApp = () => {
     await connect();
   };
 
+  const handleRegister = async () => {
+    if (!actor || !username.trim()) return;
+    
+    setIsRegistering(true);
+    try {
+      const result = await actor.registerUser(username.trim());
+      if (result.ok) {
+        loadData();
+      } else {
+        alert(result.err);
+      }
+    } catch (error) {
+      console.error('Error registering:', error);
+      alert('Error al registrar usuario');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   const handleSubmitPaper = async () => {
     if (!actor || !newPaper.title || !newPaper.content) return;
 
@@ -102,7 +66,6 @@ const AcademicJournalApp = () => {
       const result = await actor.submitPaper(newPaper.title, newPaper.content);
       if (result.ok) {
         setNewPaper({ title: '', content: '' });
-        setShowSubmitForm(false);
         loadData();
       }
     } catch (error) {
@@ -137,7 +100,7 @@ const AcademicJournalApp = () => {
     return 'Proposal';
   };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !userInfo) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 text-center max-w-md w-full border border-white/20">
@@ -146,12 +109,33 @@ const AcademicJournalApp = () => {
             <h1 className="text-3xl font-bold text-white mb-2">Milo Journal</h1>
             <p className="text-blue-200">Plataforma Descentralizada de Publicación Académica</p>
           </div>
-          <button
-            onClick={handleConnect}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
-          >
-            Conectar con Internet Computer
-          </button>
+          
+          {!isAuthenticated ? (
+            <button
+              onClick={handleConnect}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+            >
+              Conectar con Internet Computer
+            </button>
+          ) : !userInfo ? (
+            <div className="space-y-4">
+              <p className="text-white text-lg">¡Conectado! Registra tu usuario:</p>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Ingresa tu nombre de usuario"
+                className="w-full px-4 py-3 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <button
+                onClick={handleRegister}
+                disabled={!username.trim() || isRegistering}
+                className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-green-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isRegistering ? 'Registrando...' : 'Registrar Usuario'}
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     );

@@ -1,263 +1,25 @@
-# Documentación - Plataforma Académica Descentralizada (Milo Journal)
+# Milo Journal - Plataforma Académica Descentralizada
 
-## 📋 Índice
+[![IC Badge](https://img.shields.io/badge/Internet%20Computer-29ABE2?style=for-the-badge&logo=internet-computer&logoColor=white)](https://internetcomputer.org/)
+[![Motoko Badge](https://img.shields.io/badge/Motoko-6C2C91?style=for-the-badge&logo=dfinity&logoColor=white)](https://github.com/dfinity/motoko)
+[![React Badge](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Tailwind Badge](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-1. [Visión General](#visión-general)
-2. [Arquitectura del Sistema](#arquitectura-del-sistema)
-3. [Backend - Motoko](#backend---motoko)
-4. [Frontend - React](#frontend---react)
-5. [Instalación y Despliegue](#instalación-y-despliegue)
-6. [API Reference](#api-reference)
-7. [Casos de Uso](#casos-de-uso)
-8. [Seguridad](#seguridad)
-9. [Roadmap](#roadmap)
+> **Plataforma descentralizada de publicación académica construida sobre Internet Computer Protocol (ICP)**
 
----
+Milo Journal permite a investigadores publicar papers, participar en peer review comunitario y ser recompensados con tokens por sus contribuciones a la comunidad científica.
 
-## 🎯 Visión General
-
-**Milo Journal** es una plataforma descentralizada de publicación académica construida sobre Internet Computer Protocol (ICP). Permite a investigadores publicar papers, participar en peer review y ser recompensados con tokens por sus contribuciones a la comunidad científica.
-
-### Características Principales
+## 🎯 Características Principales
 
 - ✅ **Descentralización completa** en Internet Computer
-- ✅ **Sistema de peer review** comunitario
-- ✅ **Economía de tokens** con incentivos
+- ✅ **Sistema de peer review** comunitario con incentivos
+- ✅ **Economía de tokens** ($INV) integrada
 - ✅ **Estados automáticos** de papers basados en votación
-- ✅ **Interface moderna** con React
+- ✅ **Autenticación** vía Internet Identity
+- ✅ **Interface moderna** con React + Tailwind CSS
 - ✅ **Transparencia total** en el proceso de revisión
 
-### Flujo de Trabajo
-
-```mermaid
-graph TD
-    A[Usuario se registra] --> B[Recibe 1000 tokens iniciales]
-    B --> C[Envía paper - 100 tokens]
-    C --> D[Paper en estado Proposal]
-    D --> E[Comunidad vota]
-    E --> F{Votos suficientes?}
-    F -->|+3 votos| G[Approved]
-    F -->|-3 votos| H[Rejected]
-    F -->|Entre -2 y +2| I[In Process]
-    E --> J[Revisor recibe 50 tokens]
-```
-
----
-
-## 🏗️ Arquitectura del Sistema
-
-### Stack Tecnológico
-
-- **Backend**: Motoko (Internet Computer)
-- **Frontend**: React + Tailwind CSS
-- **Blockchain**: Internet Computer Protocol
-- **Estado**: HashMap en memoria (Motoko)
-- **Autenticación**: Internet Identity
-
-### Componentes Principales
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   React App     │    │  Motoko Actor   │    │  IC Blockchain  │
-│                 │◄──►│                 │◄──►│                 │
-│  - UI/UX        │    │  - Lógica       │    │  - Persistencia │
-│  - Estado Local │    │  - Validación   │    │  - Consenso     │
-│  - Interacción  │    │  - Tokens       │    │  - Seguridad    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
----
-
-## 🔧 Backend - Motoko
-
-### Tipos de Datos
-
-#### PaperStatus
-```motoko
-public type PaperStatus = {
-    #Proposal;   // Propuesta inicial
-    #InProcess;  // En proceso de revisión
-    #Approved;   // Aprobado por la comunidad
-    #Rejected;   // Rechazado por la comunidad
-};
-```
-
-#### Paper
-```motoko
-public type Paper = {
-    id: Nat;                    // ID único del paper
-    title: Text;                // Título del paper
-    author: Text;               // Nombre del autor
-    authorPrincipal: Principal; // Principal del autor
-    content: Text;              // Contenido/abstract
-    status: PaperStatus;        // Estado actual
-    timestamp: Int;             // Timestamp de creación
-    votes: Int;                 // Suma neta de votos
-    reviewers: [Principal];     // Lista de revisores
-};
-```
-
-#### User
-```motoko
-public type User = {
-    principal: Principal;       // Principal único
-    username: Text;             // Nombre de usuario
-    walletAmount: Nat;          // Cantidad de tokens
-    publishedPapers: [Nat];     // Papers publicados
-    reviewedPapers: [Nat];      // Papers revisados
-};
-```
-
-#### Vote
-```motoko
-public type Vote = {
-    paperId: Nat;               // ID del paper votado
-    voter: Principal;           // Principal del votante
-    approve: Bool;              // true = aprobar, false = rechazar
-    timestamp: Int;             // Timestamp del voto
-};
-```
-
-### Estado del Sistema
-
-```motoko
-// Contador para IDs únicos de papers
-private stable var nextPaperId: Nat = 0;
-
-// Storage principal
-private var papers = HashMap.HashMap<Nat, Paper>();
-private var users = HashMap.HashMap<Principal, User>();
-private var votes = HashMap.HashMap<Text, Vote>();
-```
-
-### Funciones Principales
-
-#### Gestión de Usuarios
-
-##### `registerUser(username: Text)`
-- **Propósito**: Registra un nuevo usuario en el sistema
-- **Tokens iniciales**: 1000 $INV
-- **Validación**: Verifica que el usuario no esté ya registrado
-- **Return**: `Result<Text, Text>`
-
-```motoko
-public shared(msg) func registerUser(username: Text) : async Result.Result<Text, Text>
-```
-
-##### `getUserInfo()`
-- **Propósito**: Obtiene información del usuario autenticado
-- **Return**: `Result<User, Text>`
-- **Uso**: Dashboard y gestión de wallet
-
-#### Gestión de Papers
-
-##### `submitPaper(title: Text, content: Text)`
-- **Costo**: 100 tokens
-- **Estado inicial**: `#Proposal`
-- **Validación**: Usuario registrado y fondos suficientes
-- **Return**: `Result<Nat, Text>` (ID del paper)
-
-##### `getAllPapers()`
-- **Propósito**: Obtiene todos los papers del sistema
-- **Return**: `[Paper]`
-- **Uso**: Listado principal en frontend
-
-##### `getPapersByStatus(status: PaperStatus)`
-- **Propósito**: Filtra papers por estado
-- **Return**: `[Paper]`
-- **Uso**: Filtros en UI
-
-#### Sistema de Votación
-
-##### `votePaper(paperId: Nat, approve: Bool)`
-- **Recompensa**: 50 tokens por voto
-- **Restricciones**: 
-  - No votar papel propio
-  - Un voto por paper por usuario
-- **Lógica**: 
-  - +3 votos → Approved
-  - -3 votos → Rejected
-  - Entre -2 y +2 → InProcess
-
-#### Estadísticas
-
-##### `getSystemStats()`
-- **Return**: `{totalPapers: Nat; totalUsers: Nat; approvedPapers: Nat}`
-- **Uso**: Dashboard metrics
-
----
-
-## 🎨 Frontend - React
-
-### Estructura de Componentes
-
-```
-AcademicJournalApp/
-├── useIC Hook                 // Conexión con Internet Computer
-├── Header Component           // Navegación y wallet
-├── Stats Cards               // Métricas del sistema
-├── Navigation Tabs           // Papers / Submit
-├── Papers Tab
-│   ├── Paper Card            // Cada paper individual
-│   └── Voting Buttons        // Approve/Reject
-└── Submit Tab                // Formulario nuevo paper
-```
-
-### Hook useIC
-
-```javascript
-const useIC = () => {
-  const [actor, setActor] = useState(null);
-  const [identity, setIdentity] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
-  // Métodos de conexión y autenticación
-}
-```
-
-**Funcionalidades**:
-- Conexión con Internet Computer
-- Gestión de identidad
-- Actor proxy para llamadas a Motoko
-- Estado de autenticación
-
-### Estados Principales
-
-```javascript
-const [activeTab, setActiveTab] = useState('papers');
-const [papers, setPapers] = useState([]);
-const [userInfo, setUserInfo] = useState(null);
-const [stats, setStats] = useState(null);
-const [newPaper, setNewPaper] = useState({ title: '', content: '' });
-```
-
-### Funciones del Frontend
-
-#### `loadData()`
-- Carga datos iniciales: papers, usuario, estadísticas
-- Se ejecuta al conectar con IC
-
-#### `handleSubmitPaper()`
-- Envía nuevo paper al backend
-- Valida campos obligatorios
-- Recarga datos tras éxito
-
-#### `handleVote(paperId, approve)`
-- Registra voto en el backend
-- Actualiza UI inmediatamente
-- Gestiona errores
-
-### Estilos y UI
-
-- **Framework**: Tailwind CSS
-- **Iconos**: Lucide React
-- **Tema**: Gradientes azul-púrpura
-- **Responsivo**: Mobile-first design
-- **Animaciones**: Hover effects y transitions
-
----
-
-## 🚀 Instalación y Despliegue
+## 🚀 Inicio Rápido
 
 ### Prerrequisitos
 
@@ -270,283 +32,278 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 nvm install node
 ```
 
-### Setup del Proyecto
+### Instalación Local
 
 ```bash
-# 1. Crear proyecto IC
-dfx new milo_journal
+# 1. Clonar el repositorio
+git clone <repository-url>
 cd milo_journal
 
-# 2. Configurar dfx.json
-{
-  "canisters": {
-    "milo_journal_backend": {
-      "main": "src/milo_journal_backend/main.mo",
-      "type": "motoko"
-    },
-    "milo_journal_frontend": {
-      "dependencies": ["milo_journal_backend"],
-      "frontend": {
-        "entrypoint": "src/milo_journal_frontend/src/index.html"
-      },
-      "source": ["src/milo_journal_frontend/assets", "dist/milo_journal_frontend/"],
-      "type": "assets"
-    }
-  }
-}
-
-# 3. Instalar dependencias frontend
-cd src/milo_journal_frontend
-npm install react react-dom @tailwindcss/line-clamp lucide-react
-```
-
-### Despliegue Local
-
-```bash
-# 1. Iniciar replica local
+# 2. Iniciar replica local de IC
 dfx start --background
 
-# 2. Desplegar canisters
+# 3. Desplegar canisters
 dfx deploy
 
-# 3. Obtener canister IDs
-dfx canister id milo_journal_backend
-dfx canister id milo_journal_frontend
+# 4. Instalar dependencias del frontend
+cd src/milo_journal_frontend
+npm install
+
+# 5. Iniciar servidor de desarrollo
+npm run dev
 ```
 
-### Despliegue en Mainnet
+### Acceso a la Aplicación
+
+1. Abrir http://localhost:5173
+2. Hacer click en "Conectar con Internet Computer"
+3. Autenticarse con Internet Identity
+4. Registrar tu usuario en la plataforma
+5. ¡Comenzar a publicar y revisar papers!
+
+## 🏗️ Arquitectura del Sistema
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   React App     │    │  Motoko Actor   │    │  IC Blockchain  │
+│                 │◄──►│                 │◄──►│                 │
+│  - UI/UX        │    │  - Lógica       │    │  - Persistencia │
+│  - Estado Local │    │  - Validación   │    │  - Consenso     │
+│  - Interacción  │    │  - Tokens       │    │  - Seguridad    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Stack Tecnológico
+
+| Componente | Tecnología | Descripción |
+|------------|------------|-------------|
+| **Backend** | Motoko | Smart contracts en Internet Computer |
+| **Frontend** | React 19 | Interface de usuario moderna |
+| **Estilos** | Tailwind CSS | Framework CSS utility-first |
+| **Iconos** | Lucide React | Biblioteca de iconos minimalista |
+| **Autenticación** | Internet Identity | Sistema de identidad descentralizada |
+| **Blockchain** | Internet Computer | Plataforma blockchain escalable |
+
+## 💰 Economía de Tokens ($INV)
+
+### Flujo de Tokens
+
+```mermaid
+graph TD
+    A[Usuario se registra] --> B[Recibe 1000 $INV iniciales]
+    B --> C[Publica paper - 100 $INV]
+    C --> D[Paper en estado Proposal]
+    D --> E[Otros usuarios votan]
+    E --> F[Revisor recibe +50 $INV]
+    F --> G{¿3 votos positivos?}
+    G -->|Sí| H[Paper Approved]
+    G -->|No| I[Paper continúa In Process]
+```
+
+### Costos y Recompensas
+
+- **Registro inicial**: 1000 $INV gratis
+- **Publicar paper**: -100 $INV
+- **Votar en paper**: +50 $INV por voto
+- **Límites**: Un voto por paper por usuario
+
+## 📊 Estados de Papers
+
+| Estado | Descripción | Condición |
+|--------|-------------|-----------|
+| **Proposal** | Propuesta inicial | Paper recién enviado |
+| **In Process** | En revisión | Entre -2 y +2 votos netos |
+| **Approved** | Aprobado | +3 o más votos netos |
+| **Rejected** | Rechazado | -3 o menos votos netos |
+
+## 🛠️ Desarrollo
+
+### Estructura del Proyecto
+
+```
+milo_journal/
+├── dfx.json                    # Configuración DFX
+├── README.md                   # Documentación principal
+├── src/
+│   ├── milo_journal_backend/   # Backend Motoko
+│   │   ├── main.mo            # Smart contract principal
+│   │   └── README.md          # Documentación backend
+│   └── milo_journal_frontend/  # Frontend React
+│       ├── src/               # Código fuente React
+│       ├── package.json       # Dependencias NPM
+│       └── README.md          # Documentación frontend
+└── .gitignore
+```
+
+### Scripts Disponibles
 
 ```bash
-# 1. Crear wallet en mainnet
-dfx identity new mainnet-identity
-dfx identity use mainnet-identity
+# Desarrollo
+dfx start --background          # Iniciar replica local
+dfx deploy                      # Desplegar canisters
+npm run dev                     # Servidor desarrollo frontend
 
-# 2. Obtener cycles
-# Visitar: https://faucet.dfinity.org/
+# Producción
+dfx deploy --network ic         # Desplegar en mainnet
+npm run build                   # Build producción
 
-# 3. Desplegar en mainnet
-dfx deploy --network ic
+# Utilidades
+dfx canister id <canister>      # Obtener ID de canister
+dfx canister call <canister> <method>  # Llamar método
 ```
 
-### Configuración Frontend
+## 🔐 Seguridad
 
-```javascript
-// Actualizar en useIC hook
-const canisterId = process.env.REACT_APP_BACKEND_CANISTER_ID;
-const agent = new HttpAgent({
-  host: process.env.NODE_ENV === 'production' 
-    ? 'https://ic0.app' 
-    : 'http://localhost:8000'
-});
-```
+### Validaciones Backend
+- **Autenticación**: Verificación de identidad en cada operación
+- **Autorización**: Solo propietarios pueden realizar ciertas acciones
+- **Prevención double-spending**: Verificación de balance antes de deducir tokens
+- **Unicidad de votos**: Un voto por usuario por paper
+- **Anti-auto-votación**: Usuarios no pueden votar sus propios papers
 
----
+### Validaciones Frontend
+- **Sanitización de inputs**: Validación de campos obligatorios
+- **Manejo de errores**: Gestión robusta de errores de red
+- **Consistencia de estado**: Sincronización con backend tras operaciones
+- **Feedback visual**: Loading states y confirmaciones
 
 ## 📚 API Reference
 
-### Endpoints Motoko
-
-#### Authentication
+### Funciones Principales
 
 ```motoko
-// Registrar usuario
+// Gestión de usuarios
 registerUser(username: Text) -> Result<Text, Text>
-
-// Obtener info del usuario
 getUserInfo() -> Result<User, Text>
-```
 
-#### Papers Management
-
-```motoko
-// Enviar paper
+// Gestión de papers
 submitPaper(title: Text, content: Text) -> Result<Nat, Text>
-
-// Obtener todos los papers
 getAllPapers() -> [Paper]
-
-// Obtener paper específico
 getPaper(paperId: Nat) -> Result<Paper, Text>
-
-// Filtrar por estado
 getPapersByStatus(status: PaperStatus) -> [Paper]
-```
 
-#### Voting System
-
-```motoko
-// Votar paper
+// Sistema de votación
 votePaper(paperId: Nat, approve: Bool) -> Result<Text, Text>
-```
 
-#### Analytics
-
-```motoko
-// Estadísticas del sistema
+// Estadísticas
 getSystemStats() -> {totalPapers: Nat; totalUsers: Nat; approvedPapers: Nat}
 ```
 
-### Error Codes
+### Tipos de Datos
 
-| Code | Description |
-|------|-------------|
-| `"Usuario ya registrado"` | El usuario ya existe |
-| `"Usuario no encontrado"` | Usuario no registrado |
-| `"Fondos insuficientes para publicar"` | Menos de 100 tokens |
-| `"Ya has votado en este paper"` | Voto duplicado |
-| `"No puedes votar tu propio paper"` | Auto-votación prohibida |
-| `"Paper no encontrado"` | ID de paper inválido |
+```motoko
+type PaperStatus = {#Proposal; #InProcess; #Approved; #Rejected};
 
----
+type Paper = {
+    id: Nat;
+    title: Text;
+    author: Text;
+    authorPrincipal: Principal;
+    content: Text;
+    status: PaperStatus;
+    timestamp: Int;
+    votes: Int;
+    reviewers: [Principal];
+};
+
+type User = {
+    principal: Principal;
+    username: Text;
+    walletAmount: Nat;
+    publishedPapers: [Nat];
+    reviewedPapers: [Nat];
+};
+```
+
+## 🌍 Despliegue en Producción
+
+### Mainnet Deployment
+
+```bash
+# 1. Crear identidad para mainnet
+dfx identity new mainnet-identity
+dfx identity use mainnet-identity
+
+# 2. Obtener cycles (visitar https://faucet.dfinity.org/)
+
+# 3. Desplegar en Internet Computer
+dfx deploy --network ic
+
+# 4. Verificar despliegue
+dfx canister --network ic id milo_journal_backend
+dfx canister --network ic id milo_journal_frontend
+```
 
 ## 💼 Casos de Uso
 
-### Caso 1: Investigador Registra y Publica
+### Caso 1: Investigador Publica Paper
+1. Conecta con Internet Identity
+2. Registra cuenta (recibe 1000 $INV)
+3. Publica paper (cuesta 100 $INV)
+4. Comunidad revisa y vota
+5. Paper es aprobado/rechazado automáticamente
 
-```javascript
-// 1. Registro
-await actor.registerUser("Dr. Smith");
-
-// 2. Verificar balance (1000 tokens iniciales)
-const userInfo = await actor.getUserInfo();
-console.log(userInfo.ok.walletAmount); // 1000
-
-// 3. Publicar paper (costo: 100 tokens)
-const result = await actor.submitPaper(
-  "Quantum Computing Applications",
-  "This paper explores..."
-);
-
-// 4. Balance actualizado: 900 tokens
-```
-
-### Caso 2: Peer Review Process
-
-```javascript
-// 1. Obtener papers para revisar
-const papers = await actor.getAllPapers();
-const proposalPapers = papers.filter(p => p.status.Proposal);
-
-// 2. Revisar y votar
-await actor.votePaper(proposalPapers[0].id, true); // Aprobar
-
-// 3. Recibir recompensa: +50 tokens
-```
-
-### Caso 3: Seguimiento de Paper
-
-```javascript
-// 1. Obtener paper específico
-const paper = await actor.getPaper(123);
-
-// 2. Verificar estado
-if (paper.ok.status.Approved) {
-  console.log("Paper aprobado!");
-} else if (paper.ok.votes >= 2) {
-  console.log("Paper cerca de aprobación");
-}
-```
-
----
-
-## 🔒 Seguridad
-
-### Validaciones Backend
-
-1. **Authentication**: Todos los métodos `shared(msg)` verifican identidad
-2. **Authorization**: Solo propietarios pueden realizar ciertas acciones
-3. **Double-spending**: Verificación de balance antes de deducir tokens
-4. **Vote uniqueness**: Un voto por usuario por paper
-5. **Self-voting prevention**: No votar papers propios
-
-### Validaciones Frontend
-
-1. **Input sanitization**: Validación de campos obligatorios
-2. **Error handling**: Manejo robusto de errores de red
-3. **State consistency**: Sincronización con backend tras operaciones
-4. **UI feedback**: Loading states y confirmaciones
-
-### Consideraciones de Seguridad
-
-- **Private keys**: Manejadas por Internet Identity
-- **Data persistence**: Estado stable en Motoko
-- **Canister upgrades**: Migración de datos preservada
-- **Rate limiting**: Control implícito por costo de tokens
-
----
+### Caso 2: Revisor Participa en Peer Review
+1. Explora papers en estado "Proposal" o "In Process"
+2. Lee y evalúa contenido académico
+3. Vota aprobar/rechazar
+4. Recibe 50 $INV por participar
+5. Contribuye al consenso científico
 
 ## 🛣️ Roadmap
 
-### Fase 1: Core Platform ✅
-- [x] Sistema básico de papers
-- [x] Votación comunitaria
-- [x] Economía de tokens
-- [x] Interface React
+### ✅ Fase 1: Core Platform (Completada)
+- Sistema básico de papers y votación
+- Economía de tokens funcional
+- Interface React moderna
+- Conexión ICP completa
 
-### Fase 2: Enhanced Features
-- [ ] **Sistema DAO** para gobernanza
-- [ ] **Categorías** de papers por disciplina
-- [ ] **Búsqueda avanzada** y filtros
-- [ ] **Comentarios** en papers
-- [ ] **Reputación** de usuarios
+### 🔄 Fase 2: Enhanced Features (En desarrollo)
+- [ ] Sistema DAO para gobernanza
+- [ ] Categorías de papers por disciplina
+- [ ] Búsqueda avanzada y filtros
+- [ ] Comentarios detallados en papers
+- [ ] Sistema de reputación de usuarios
 
-### Fase 3: Advanced Functionality
-- [ ] **NFTs** para papers aprobados
-- [ ] **Staking** de tokens para mejores recompensas
-- [ ] **API externa** para integraciones
-- [ ] **Mobile app** React Native
-- [ ] **Analytics dashboard** avanzado
+### 🔮 Fase 3: Advanced Functionality
+- [ ] NFTs para papers aprobados
+- [ ] Staking de tokens para mejores recompensas
+- [ ] API externa para integraciones
+- [ ] Mobile app React Native
+- [ ] Analytics dashboard avanzado
 
-### Fase 4: Ecosystem Growth
-- [ ] **Multi-chain** support
-- [ ] **Partnerships** con universidades
-- [ ] **Grant program** para investigadores
-- [ ] **Marketplace** de servicios académicos
+### 🚀 Fase 4: Ecosystem Growth
+- [ ] Multi-chain support
+- [ ] Partnerships con universidades
+- [ ] Grant program para investigadores
+- [ ] Marketplace de servicios académicos
 
----
+## 🤝 Contribuciones
 
-## 📞 Soporte y Contribuciones
+¡Las contribuciones son bienvenidas! Por favor:
 
-### Desarrollo Local
-
-```bash
-# Clonar repositorio
-git clone https://github.com/user/milo-journal
-cd milo-journal
-
-# Setup desarrollo
-dfx start --background
-dfx deploy
-npm run start
-```
-
-### Testing
-
-```bash
-# Tests backend Motoko
-moc --check src/milo_journal_backend/main.mo
-
-# Tests frontend React
-npm test
-```
-
-### Contribuir
-
-1. Fork del repositorio
-2. Crear branch de feature
-3. Commit cambios
-4. Push y crear Pull Request
-
-### Contacto
-
-
----
+1. Fork el repositorio
+2. Crea una branch para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la branch (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
 ## 📄 Licencia
 
-MIT License - Ver archivo `LICENSE` para detalles completos.
+Este proyecto está bajo la licencia MIT. Ver `LICENSE` para más detalles.
 
 ---
 
-*Documentación generada para Milo Journal v1.0.0*
-*Última actualización: Mayo 2025*
+## 🔗 Enlaces Útiles
+
+- [Internet Computer Documentation](https://internetcomputer.org/docs/current/)
+- [Motoko Language Guide](https://internetcomputer.org/docs/current/motoko/main/motoko/)
+- [DFX CLI Reference](https://internetcomputer.org/docs/current/references/cli-reference/)
+- [React Documentation](https://reactjs.org/docs/getting-started.html)
+- [Tailwind CSS Docs](https://tailwindcss.com/docs)
+
+---
+
+**Milo Journal v1.0.0** - Revolucionando la publicación académica con tecnología descentralizada.
+
+*Última actualización: Enero 2025*
