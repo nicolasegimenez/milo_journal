@@ -98,10 +98,6 @@ graph TD
     G -->|✅ Sí| H[📋 Paper Approved]
     G -->|❌ No| I[⏳ Paper In Process]
     
-    style A fill:#e1f5fe
-    style H fill:#c8e6c9
-    style I fill:#fff3e0
-    style G fill:#f3e5f5
 ```
 ### Costos y Recompensas
 
