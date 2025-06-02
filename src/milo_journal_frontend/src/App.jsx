@@ -67,9 +67,13 @@ const AcademicJournalApp = () => {
       if (result.ok) {
         setNewPaper({ title: '', content: '' });
         loadData();
+        alert('Paper submitted successfully!');
+      } else {
+        alert('Error: ' + result.err);
       }
     } catch (error) {
       console.error('Error submitting paper:', error);
+      alert('Error submitting paper: ' + error.message);
     }
   };
 

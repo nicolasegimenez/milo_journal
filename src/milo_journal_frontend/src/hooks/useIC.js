@@ -5,7 +5,7 @@ import { AuthClient } from '@dfinity/auth-client';
 import { Actor, HttpAgent } from '@dfinity/agent';
 import { idlFactory } from '../declarations/milo_journal_backend';
 
-const canisterId = process.env.REACT_APP_BACKEND_CANISTER_ID || 'rrkah-fqaaa-aaaah-qcaaq-cai';
+const canisterId = process.env.REACT_APP_BACKEND_CANISTER_ID || 'uxrrr-q7777-77774-qaaaq-cai';
 
 const useIC = () => {
   const [actor, setActor] = useState(null);
@@ -13,27 +13,24 @@ const useIC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const connect = async () => {
-    const authClient = await AuthClient.create();
-    await authClient.login({
-      identityProvider: "https://identity.ic0.app",
-      onSuccess: async () => {
-        const identity = await authClient.getIdentity();
-        const agent = new HttpAgent({ identity });
+    try {
+      const agent = new HttpAgent({ 
+        host: "http://localhost:4943"
+      });
 
-        if (process.env.NODE_ENV !== 'production') {
-          await agent.fetchRootKey(); // Solo en local
-        }
+      // Siempre fetch root key en desarrollo local
+      await agent.fetchRootKey();
 
-        const actor = Actor.createActor(idlFactory, {
-          agent,
-          canisterId
-        });
+      const actor = Actor.createActor(idlFactory, {
+        agent,
+        canisterId
+      });
 
-        setIdentity(identity);
-        setActor(actor);
-        setIsAuthenticated(true);
-      }
-    });
+      setActor(actor);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Error connecting to IC:', error);
+    }
   };
 
   return { actor, identity, isAuthenticated, connect };
