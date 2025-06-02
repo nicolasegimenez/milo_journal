@@ -249,6 +249,18 @@ dfx canister --network ic id milo_journal_frontend
 4. Recibe 50 $INV por participar
 5. Contribuye al consenso científico
 
+## 🆔 Canister IDs
+
+### Mainnet Deployment
+
+- **Backend Canister**: `gwld6-qqaaa-aaaak-quh7q-cai`
+- **Frontend Canister**: `tg52i-qiaaa-aaaak-quiaa-cai`
+
+Para acceder a la aplicación en producción:
+```
+https://tg52i-qiaaa-aaaak-quiaa-cai.icp0.io
+```
+
 ## 🛣️ Roadmap
 
 ### ✅ Fase 1: Core Platform (Completada)
