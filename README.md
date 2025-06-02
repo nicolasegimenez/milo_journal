@@ -87,19 +87,18 @@ npm run dev
 ## 💰 Economía de Tokens ($INV)
 
 ### Flujo de Tokens
-
 ```mermaid
 graph TD
     A[Usuario se registra] --> B[Recibe 1000 $INV iniciales]
-    B --> C[Publica paper - 100 $INV]
-    C --> D[Paper en estado Proposal]
-    D --> E[Otros usuarios votan]
-    E --> F[Revisor recibe +50 $INV]
-    F --> G{¿3 votos positivos?}
-    G -->|Sí| H[Paper Approved]
-    G -->|No| I[Paper continúa In Process]
+    B --> C[Publica paper<br/>Costo: -100 $INV]
+    C --> D[Paper en estado<br/>📄 Proposal]
+    D --> E[Otros usuarios<br/>pueden votar]
+    E --> F[Revisor recibe<br/>💰 +50 $INV por voto]
+    F --> G{¿Tiene 3 votos<br/>positivos?}
+    G -->|✅ Sí| H[📋 Paper Approved]
+    G -->|❌ No| I[⏳ Paper In Process]
+    
 ```
-
 ### Costos y Recompensas
 
 - **Registro inicial**: 1000 $INV gratis
